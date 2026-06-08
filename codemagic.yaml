@@ -1,13 +1,21 @@
 workflows:
-  ios-release:
-    name: iOS Release
+
+  # 내 기기 테스트용 (지금 사용)
+  ios-adhoc:
+    name: iOS Ad Hoc (Device Test)
     max_build_duration: 60
     instance_type: mac_mini_m2
+
+    integrations:
+      app_store_connect: Apple Developer API Key
 
     environment:
       flutter: stable
       xcode: latest
       cocoapods: default
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: com.aicoach.aiPushupCounter
 
     scripts:
       - name: Get Flutter packages
@@ -15,17 +23,61 @@ workflows:
 
       - name: Install CocoaPods
         script: |
-          cd ios
-          pod install
+          cd ios && pod install
 
-      - name: Build iOS (no codesign)
+      - name: Build iOS IPA
         script: |
-          flutter build ios --release --no-codesign
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
-      - build/ios/iphoneos/Runner.app
+      - build/ios/ipa/*.ipa
 
     publishing:
+      email:
+        recipients:
+          - sweetbeater@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  # App Store 출시용 (나중에 사용)
+  ios-appstore:
+    name: iOS App Store
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    integrations:
+      app_store_connect: Apple Developer API Key
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.aicoach.aiPushupCounter
+
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+
+      - name: Install CocoaPods
+        script: |
+          cd ios && pod install
+
+      - name: Build iOS IPA
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
       email:
         recipients:
           - sweetbeater@gmail.com
