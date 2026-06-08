@@ -25,6 +25,9 @@ workflows:
         script: |
           cd ios && pod install
 
+      - name: Set up code signing
+        script: xcode-project use-profiles
+
       - name: Build iOS IPA
         script: flutter build ipa --release
 
