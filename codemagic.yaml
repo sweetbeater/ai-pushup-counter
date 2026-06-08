@@ -29,10 +29,13 @@ workflows:
         script: xcode-project use-profiles
 
       - name: Build iOS IPA
-        script: flutter build ipa --release
+        script: |
+          flutter build ipa --release
+          find . -name "*.ipa" 2>/dev/null || echo "No IPA found"
 
     artifacts:
       - build/ios/ipa/*.ipa
+      - "**/*.ipa"
 
     publishing:
       email:
