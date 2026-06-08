@@ -22,7 +22,23 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initCamera());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initCamera();
+      ref.listenManual(workoutProvider, (previous, next) {
+        if (next.status == WorkoutStatus.finished && mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ResultScreen(
+                count: next.count,
+                durationSeconds: next.durationSeconds,
+                date: DateTime.now(),
+              ),
+            ),
+          );
+        }
+      });
+    });
   }
 
   Future<void> _initCamera() async {
@@ -71,21 +87,6 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     final landmarks = ref.watch(poseLandmarksProvider);
     final cameraController =
         ref.watch(cameraServiceProvider).controller;
-
-    if (workout.status == WorkoutStatus.finished) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ResultScreen(
-              count: workout.count,
-              durationSeconds: workout.durationSeconds,
-              date: DateTime.now(),
-            ),
-          ),
-        );
-      });
-    }
 
     return Scaffold(
       backgroundColor: Colors.black,
