@@ -30,8 +30,10 @@ workflows:
 
       - name: Build iOS IPA
         script: |
-          flutter build ipa --release
-          find . -name "*.ipa" 2>/dev/null || echo "No IPA found"
+          flutter build ios --release --no-codesign
+          xcode-project build-ipa \
+            --workspace ios/Runner.xcworkspace \
+            --scheme Runner
 
     artifacts:
       - build/ios/ipa/*.ipa
