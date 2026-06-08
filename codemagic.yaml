@@ -7,7 +7,7 @@ workflows:
     instance_type: mac_mini_m2
 
     integrations:
-      app_store_connect: Apple Developer API Key
+      app_store_connect: Codemagic
 
     environment:
       flutter: stable
@@ -48,7 +48,7 @@ workflows:
     instance_type: mac_mini_m2
 
     integrations:
-      app_store_connect: Apple Developer API Key
+      app_store_connect: Codemagic
 
     environment:
       flutter: stable
