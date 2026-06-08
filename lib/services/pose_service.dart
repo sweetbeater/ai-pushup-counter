@@ -68,6 +68,12 @@ class PoseService {
       rightShoulder: toLandmark(PoseLandmarkType.rightShoulder),
       rightElbow: toLandmark(PoseLandmarkType.rightElbow),
       rightWrist: toLandmark(PoseLandmarkType.rightWrist),
+      leftHip: toLandmark(PoseLandmarkType.leftHip),
+      leftKnee: toLandmark(PoseLandmarkType.leftKnee),
+      leftAnkle: toLandmark(PoseLandmarkType.leftAnkle),
+      rightHip: toLandmark(PoseLandmarkType.rightHip),
+      rightKnee: toLandmark(PoseLandmarkType.rightKnee),
+      rightAnkle: toLandmark(PoseLandmarkType.rightAnkle),
     );
   }
 

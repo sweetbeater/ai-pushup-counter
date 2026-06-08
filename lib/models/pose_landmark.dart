@@ -8,12 +8,20 @@ class PoseLandmarkData {
 }
 
 class PoseLandmarks {
+  // 팔
   final PoseLandmarkData? leftShoulder;
   final PoseLandmarkData? leftElbow;
   final PoseLandmarkData? leftWrist;
   final PoseLandmarkData? rightShoulder;
   final PoseLandmarkData? rightElbow;
   final PoseLandmarkData? rightWrist;
+  // 다리
+  final PoseLandmarkData? leftHip;
+  final PoseLandmarkData? leftKnee;
+  final PoseLandmarkData? leftAnkle;
+  final PoseLandmarkData? rightHip;
+  final PoseLandmarkData? rightKnee;
+  final PoseLandmarkData? rightAnkle;
 
   const PoseLandmarks({
     this.leftShoulder,
@@ -22,15 +30,14 @@ class PoseLandmarks {
     this.rightShoulder,
     this.rightElbow,
     this.rightWrist,
+    this.leftHip,
+    this.leftKnee,
+    this.leftAnkle,
+    this.rightHip,
+    this.rightKnee,
+    this.rightAnkle,
   });
 
-  bool get isValid {
-    final landmarks = [
-      leftShoulder, leftElbow, leftWrist,
-      rightShoulder, rightElbow, rightWrist,
-    ];
-    return landmarks.every(
-      (l) => l != null && l.visibility > 0.5,
-    );
-  }
+  bool isValidFor(List<PoseLandmarkData?> joints) =>
+      joints.every((l) => l != null && l.visibility > 0.5);
 }

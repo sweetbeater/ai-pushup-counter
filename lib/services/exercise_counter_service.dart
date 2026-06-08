@@ -1,11 +1,14 @@
 import '../core/constants/app_constants.dart';
 import '../core/utils/angle_calculator.dart';
 import '../core/utils/pose_smoothing.dart';
+import '../models/exercise_config.dart';
 import '../models/pose_landmark.dart';
 
 enum PushupState { ready, down, up }
 
-class PushupCounterService {
+class ExerciseCounterService {
+  final ExerciseConfig config;
+
   PushupState state = PushupState.ready;
   int count = 0;
   DateTime? lastRepTime;
@@ -16,8 +19,15 @@ class PushupCounterService {
 
   void Function(int count)? onCount;
 
+  ExerciseCounterService(this.config);
+
   void processPose(PoseLandmarks pose) {
-    if (!pose.isValid) {
+    final left = config.leftJoints(pose);
+    final right = config.rightJoints(pose);
+
+    if (left == null || right == null ||
+        left.s == null || left.e == null || left.w == null ||
+        right.s == null || right.e == null || right.w == null) {
       _missingFrames++;
       if (_missingFrames >= AppConstants.maxMissingFrames) {
         _leftSmoothing.reset();
@@ -27,16 +37,8 @@ class PushupCounterService {
     }
     _missingFrames = 0;
 
-    final leftAngle = calculateAngle(
-      pose.leftShoulder!.position,
-      pose.leftElbow!.position,
-      pose.leftWrist!.position,
-    );
-    final rightAngle = calculateAngle(
-      pose.rightShoulder!.position,
-      pose.rightElbow!.position,
-      pose.rightWrist!.position,
-    );
+    final leftAngle = calculateAngle(left.s!, left.e!, left.w!);
+    final rightAngle = calculateAngle(right.s!, right.e!, right.w!);
 
     final smoothedLeft = _leftSmoothing.smooth(leftAngle);
     final smoothedRight = _rightSmoothing.smooth(rightAngle);
@@ -49,11 +51,11 @@ class PushupCounterService {
     switch (state) {
       case PushupState.ready:
       case PushupState.up:
-        if (angle <= AppConstants.downAngleThreshold) {
+        if (angle <= config.downThreshold) {
           state = PushupState.down;
         }
       case PushupState.down:
-        if (angle >= AppConstants.upAngleThreshold) {
+        if (angle >= config.upThreshold) {
           final now = DateTime.now();
           final elapsed = lastRepTime == null
               ? AppConstants.minRepIntervalMs + 1

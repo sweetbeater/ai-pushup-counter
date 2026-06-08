@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants/app_constants.dart';
+import '../core/constants/exercises.dart';
+import '../models/exercise_config.dart';
 import '../models/exercise_record.dart';
-import '../services/pushup_counter_service.dart';
+import '../services/exercise_counter_service.dart';
 import '../services/storage_service.dart';
 import '../services/tts_service.dart';
 
@@ -13,12 +15,14 @@ class WorkoutState {
   final int count;
   final int countdownValue;
   final int durationSeconds;
+  final ExerciseConfig exercise;
 
   const WorkoutState({
     this.status = WorkoutStatus.idle,
     this.count = 0,
     this.countdownValue = AppConstants.countdownSeconds,
     this.durationSeconds = 0,
+    this.exercise = Exercises.pushup,
   });
 
   WorkoutState copyWith({
@@ -26,17 +30,19 @@ class WorkoutState {
     int? count,
     int? countdownValue,
     int? durationSeconds,
+    ExerciseConfig? exercise,
   }) =>
       WorkoutState(
         status: status ?? this.status,
         count: count ?? this.count,
         countdownValue: countdownValue ?? this.countdownValue,
         durationSeconds: durationSeconds ?? this.durationSeconds,
+        exercise: exercise ?? this.exercise,
       );
 }
 
 class WorkoutNotifier extends StateNotifier<WorkoutState> {
-  final PushupCounterService _counter = PushupCounterService();
+  late ExerciseCounterService _counter;
   final TtsService _tts = TtsService();
   final StorageService _storage = StorageService();
 
@@ -45,11 +51,19 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   DateTime? _startTime;
 
   WorkoutNotifier() : super(const WorkoutState()) {
+    _counter = ExerciseCounterService(state.exercise);
     _tts.initialize();
     _counter.onCount = _onCount;
   }
 
-  PushupCounterService get counterService => _counter;
+  ExerciseCounterService get counterService => _counter;
+
+  void selectExercise(ExerciseConfig exercise) {
+    if (state.status != WorkoutStatus.idle) return;
+    _counter = ExerciseCounterService(exercise);
+    _counter.onCount = _onCount;
+    state = state.copyWith(exercise: exercise);
+  }
 
   void startWorkout() {
     if (state.status != WorkoutStatus.idle) return;
@@ -102,6 +116,8 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
         date: _startTime ?? DateTime.now(),
         count: state.count,
         durationSeconds: state.durationSeconds,
+        exerciseId: state.exercise.id,
+        exerciseName: state.exercise.name,
       );
       await _storage.saveRecord(record);
     }
@@ -113,7 +129,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
     _countdownTimer?.cancel();
     _durationTimer?.cancel();
     _counter.reset();
-    state = const WorkoutState();
+    state = WorkoutState(exercise: state.exercise);
   }
 
   @override
