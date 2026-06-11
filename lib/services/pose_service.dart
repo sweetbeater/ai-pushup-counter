@@ -11,7 +11,6 @@ class PoseService {
   Future<PoseLandmarks?> processImage(
     CameraImage image,
     CameraDescription camera,
-    Size screenSize,
   ) async {
     final inputImage = _buildInputImage(image, camera);
     if (inputImage == null) return null;
@@ -19,8 +18,7 @@ class PoseService {
     final poses = await _detector.processImage(inputImage);
     if (poses.isEmpty) return null;
 
-    final pose = poses.first;
-    return _extractLandmarks(pose, image, screenSize);
+    return _extractLandmarks(poses.first, image);
   }
 
   InputImage? _buildInputImage(CameraImage image, CameraDescription camera) {
@@ -44,24 +42,20 @@ class PoseService {
     );
   }
 
-  PoseLandmarks _extractLandmarks(
-    Pose pose,
-    CameraImage image,
-    Size screenSize,
-  ) {
+  /// 랜드마크를 원본 이미지 좌표 그대로 반환.
+  /// 화면 비율로 늘리지 않아 관절 각도가 왜곡되지 않는다.
+  PoseLandmarks _extractLandmarks(Pose pose, CameraImage image) {
     PoseLandmarkData? toLandmark(PoseLandmarkType type) {
       final lm = pose.landmarks[type];
       if (lm == null) return null;
       return PoseLandmarkData(
-        position: Offset(
-          lm.x / image.width * screenSize.width,
-          lm.y / image.height * screenSize.height,
-        ),
+        position: Offset(lm.x, lm.y),
         visibility: lm.likelihood,
       );
     }
 
     return PoseLandmarks(
+      imageSize: Size(image.width.toDouble(), image.height.toDouble()),
       leftShoulder: toLandmark(PoseLandmarkType.leftShoulder),
       leftElbow: toLandmark(PoseLandmarkType.leftElbow),
       leftWrist: toLandmark(PoseLandmarkType.leftWrist),

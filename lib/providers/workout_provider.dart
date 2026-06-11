@@ -17,13 +17,21 @@ class WorkoutState {
   final int durationSeconds;
   final ExerciseConfig exercise;
 
+  /// 목표 횟수 (null = 무제한)
+  final int? goalCount;
+  final bool isNewRecord;
+
   const WorkoutState({
     this.status = WorkoutStatus.idle,
     this.count = 0,
     this.countdownValue = AppConstants.countdownSeconds,
     this.durationSeconds = 0,
     this.exercise = Exercises.pushup,
+    this.goalCount,
+    this.isNewRecord = false,
   });
+
+  static const _unset = Object();
 
   WorkoutState copyWith({
     WorkoutStatus? status,
@@ -31,6 +39,8 @@ class WorkoutState {
     int? countdownValue,
     int? durationSeconds,
     ExerciseConfig? exercise,
+    Object? goalCount = _unset,
+    bool? isNewRecord,
   }) =>
       WorkoutState(
         status: status ?? this.status,
@@ -38,6 +48,9 @@ class WorkoutState {
         countdownValue: countdownValue ?? this.countdownValue,
         durationSeconds: durationSeconds ?? this.durationSeconds,
         exercise: exercise ?? this.exercise,
+        goalCount:
+            identical(goalCount, _unset) ? this.goalCount : goalCount as int?,
+        isNewRecord: isNewRecord ?? this.isNewRecord,
       );
 }
 
@@ -49,6 +62,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   Timer? _countdownTimer;
   Timer? _durationTimer;
   DateTime? _startTime;
+  bool _goalAnnounced = false;
 
   WorkoutNotifier() : super(const WorkoutState()) {
     _counter = ExerciseCounterService(state.exercise);
@@ -63,6 +77,11 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
     _counter = ExerciseCounterService(exercise);
     _counter.onCount = _onCount;
     state = state.copyWith(exercise: exercise);
+  }
+
+  void setGoal(int? goal) {
+    if (state.status != WorkoutStatus.idle) return;
+    state = state.copyWith(goalCount: goal);
   }
 
   void startWorkout() {
@@ -95,7 +114,12 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   void _beginExercise() {
     _counter.reset();
     _startTime = DateTime.now();
-    state = state.copyWith(status: WorkoutStatus.exercising, count: 0);
+    _goalAnnounced = false;
+    state = state.copyWith(
+      status: WorkoutStatus.exercising,
+      count: 0,
+      durationSeconds: 0,
+    );
     _durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       final elapsed = DateTime.now().difference(_startTime!).inSeconds;
       state = state.copyWith(durationSeconds: elapsed);
@@ -104,32 +128,64 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
 
   void _onCount(int count) {
     state = state.copyWith(count: count);
-    _tts.speakCount(count);
+
+    final goal = state.goalCount;
+    if (goal != null && count >= goal) {
+      _goalAnnounced = true;
+      _tts.speakGoalReached(goal);
+      stopWorkout();
+    } else {
+      _tts.speakCount(count, goal: goal);
+    }
   }
 
   Future<void> stopWorkout() async {
     _countdownTimer?.cancel();
     _durationTimer?.cancel();
 
-    if (state.status == WorkoutStatus.exercising) {
-      final record = ExerciseRecord(
-        date: _startTime ?? DateTime.now(),
-        count: state.count,
-        durationSeconds: state.durationSeconds,
-        exerciseId: state.exercise.id,
-        exerciseName: state.exercise.name,
+    // 카운트다운 중 종료 → 기록 없이 대기 상태로 복귀
+    if (state.status == WorkoutStatus.countdown) {
+      _tts.dispose();
+      state = state.copyWith(
+        status: WorkoutStatus.idle,
+        countdownValue: AppConstants.countdownSeconds,
       );
-      await _storage.saveRecord(record);
+      return;
     }
 
-    state = state.copyWith(status: WorkoutStatus.finished);
+    if (state.status != WorkoutStatus.exercising) return;
+
+    final best = await _storage.getBestCount(state.exercise.id);
+    final isNewRecord = state.count > 0 && state.count > best;
+
+    final record = ExerciseRecord(
+      date: _startTime ?? DateTime.now(),
+      count: state.count,
+      durationSeconds: state.durationSeconds,
+      exerciseId: state.exercise.id,
+      exerciseName: state.exercise.name,
+    );
+    await _storage.saveRecord(record);
+
+    // 목표 달성 멘트가 이미 나간 경우 마무리 멘트는 생략
+    if (!_goalAnnounced) {
+      _tts.speakFinish(state.count, isNewRecord: isNewRecord);
+    }
+
+    state = state.copyWith(
+      status: WorkoutStatus.finished,
+      isNewRecord: isNewRecord,
+    );
   }
 
   void resetWorkout() {
     _countdownTimer?.cancel();
     _durationTimer?.cancel();
     _counter.reset();
-    state = WorkoutState(exercise: state.exercise);
+    state = WorkoutState(
+      exercise: state.exercise,
+      goalCount: state.goalCount,
+    );
   }
 
   @override

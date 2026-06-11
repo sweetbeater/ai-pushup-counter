@@ -2,22 +2,28 @@ import 'package:camera/camera.dart';
 
 class CameraService {
   CameraController? _controller;
-  List<CameraDescription> _cameras = [];
+  CameraDescription? _camera;
 
   CameraController? get controller => _controller;
   bool get isInitialized => _controller?.value.isInitialized ?? false;
 
-  Future<void> initialize() async {
-    _cameras = await availableCameras();
-    if (_cameras.isEmpty) return;
+  /// 실제 선택된(스트림 중인) 카메라
+  CameraDescription? get currentCamera => _camera;
 
-    final camera = _cameras.firstWhere(
+  bool get isFrontCamera =>
+      _camera?.lensDirection == CameraLensDirection.front;
+
+  Future<void> initialize() async {
+    final cameras = await availableCameras();
+    if (cameras.isEmpty) return;
+
+    _camera = cameras.firstWhere(
       (c) => c.lensDirection == CameraLensDirection.front,
-      orElse: () => _cameras.first,
+      orElse: () => cameras.first,
     );
 
     _controller = CameraController(
-      camera,
+      _camera!,
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.bgra8888,
@@ -33,11 +39,9 @@ class CameraService {
 
   Future<void> stopStream() async {
     if (_controller == null || !isInitialized) return;
+    if (!_controller!.value.isStreamingImages) return;
     await _controller!.stopImageStream();
   }
-
-  CameraDescription? get currentCamera =>
-      _cameras.isNotEmpty ? _cameras.first : null;
 
   Future<void> dispose() async {
     await _controller?.dispose();

@@ -13,38 +13,57 @@ class ExerciseCounterService {
   int count = 0;
   DateTime? lastRepTime;
 
-  final PoseSmoothing _leftSmoothing = PoseSmoothing();
-  final PoseSmoothing _rightSmoothing = PoseSmoothing();
+  final PoseSmoothing _smoothing = PoseSmoothing();
   int _missingFrames = 0;
+  int _downConfirm = 0;
+  int _upConfirm = 0;
 
   void Function(int count)? onCount;
 
   ExerciseCounterService(this.config);
 
   void processPose(PoseLandmarks pose) {
-    final left = config.leftJoints(pose);
-    final right = config.rightJoints(pose);
+    final angle = _measureAngle(pose);
 
-    if (left == null || right == null ||
-        left.s == null || left.e == null || left.w == null ||
-        right.s == null || right.e == null || right.w == null) {
+    if (angle == null) {
       _missingFrames++;
       if (_missingFrames >= AppConstants.maxMissingFrames) {
-        _leftSmoothing.reset();
-        _rightSmoothing.reset();
+        // 자세 추적이 끊기면 진행 중이던 반복을 무효화 (오카운트 방지)
+        _smoothing.reset();
+        _downConfirm = 0;
+        _upConfirm = 0;
+        if (state == PushupState.down) state = PushupState.ready;
       }
       return;
     }
     _missingFrames = 0;
 
-    final leftAngle = calculateAngle(left.s!, left.e!, left.w!);
-    final rightAngle = calculateAngle(right.s!, right.e!, right.w!);
+    _updateState(_smoothing.smooth(angle));
+  }
 
-    final smoothedLeft = _leftSmoothing.smooth(leftAngle);
-    final smoothedRight = _rightSmoothing.smooth(rightAngle);
-    final avgAngle = (smoothedLeft + smoothedRight) / 2;
+  /// 좌우 중 신뢰도(visibility)가 충분한 쪽만 사용해 각도를 측정.
+  /// 측면 자세에서 반대쪽 팔이 가려져도 보이는 쪽만으로 정확히 인식된다.
+  double? _measureAngle(PoseLandmarks pose) {
+    final leftAngle = _sideAngle(config.leftJoints(pose));
+    final rightAngle = _sideAngle(config.rightJoints(pose));
 
-    _updateState(avgAngle);
+    if (leftAngle != null && rightAngle != null) {
+      return (leftAngle + rightAngle) / 2;
+    }
+    return leftAngle ?? rightAngle;
+  }
+
+  double? _sideAngle(JointSet joints) {
+    final s = joints.s;
+    final e = joints.e;
+    final w = joints.w;
+    if (s == null || e == null || w == null) return null;
+
+    final minVisibility = [s.visibility, e.visibility, w.visibility]
+        .reduce((a, b) => a < b ? a : b);
+    if (minVisibility < AppConstants.visibilityThreshold) return null;
+
+    return calculateAngle(s.position, e.position, w.position);
   }
 
   void _updateState(double angle) {
@@ -52,21 +71,33 @@ class ExerciseCounterService {
       case PushupState.ready:
       case PushupState.up:
         if (angle <= config.downThreshold) {
-          state = PushupState.down;
+          _downConfirm++;
+          if (_downConfirm >= AppConstants.stateConfirmFrames) {
+            state = PushupState.down;
+            _downConfirm = 0;
+          }
+        } else {
+          _downConfirm = 0;
         }
       case PushupState.down:
         if (angle >= config.upThreshold) {
-          final now = DateTime.now();
-          final elapsed = lastRepTime == null
-              ? AppConstants.minRepIntervalMs + 1
-              : now.difference(lastRepTime!).inMilliseconds;
+          _upConfirm++;
+          if (_upConfirm >= AppConstants.stateConfirmFrames) {
+            _upConfirm = 0;
+            final now = DateTime.now();
+            final elapsed = lastRepTime == null
+                ? AppConstants.minRepIntervalMs + 1
+                : now.difference(lastRepTime!).inMilliseconds;
 
-          if (elapsed > AppConstants.minRepIntervalMs) {
-            count++;
-            lastRepTime = now;
-            state = PushupState.up;
-            onCount?.call(count);
+            if (elapsed > AppConstants.minRepIntervalMs) {
+              count++;
+              lastRepTime = now;
+              state = PushupState.up;
+              onCount?.call(count);
+            }
           }
+        } else {
+          _upConfirm = 0;
         }
     }
   }
@@ -75,8 +106,9 @@ class ExerciseCounterService {
     state = PushupState.ready;
     count = 0;
     lastRepTime = null;
-    _leftSmoothing.reset();
-    _rightSmoothing.reset();
+    _smoothing.reset();
     _missingFrames = 0;
+    _downConfirm = 0;
+    _upConfirm = 0;
   }
 }

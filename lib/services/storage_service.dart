@@ -20,4 +20,12 @@ class StorageService {
         .map((s) => ExerciseRecord.fromJson(jsonDecode(s) as Map<String, dynamic>))
         .toList();
   }
+
+  /// 해당 운동의 1회 세션 최고 기록
+  Future<int> getBestCount(String exerciseId) async {
+    final records = await getRecords();
+    return records
+        .where((r) => r.exerciseId == exerciseId)
+        .fold<int>(0, (best, r) => r.count > best ? r.count : best);
+  }
 }

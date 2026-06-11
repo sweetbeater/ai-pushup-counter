@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/theme/app_theme.dart';
 import 'screens/home/home_screen.dart';
 
 void main() {
@@ -15,7 +16,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'AI 팔굽혀펴기',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
+      theme: AppTheme.dark,
       home: const HomeScreen(),
     );
   }

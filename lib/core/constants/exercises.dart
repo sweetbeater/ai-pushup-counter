@@ -6,7 +6,8 @@ class Exercises {
     id: 'pushup',
     name: '팔굽혀펴기',
     downThreshold: 100,
-    upThreshold: 160,
+    // 팔을 완전히 펴지 않는 사용자도 인식되도록 155로 완화
+    upThreshold: 155,
     jointGroup: JointGroup.arms,
   );
 
@@ -14,7 +15,7 @@ class Exercises {
     id: 'squat',
     name: '스쿼트',
     downThreshold: 100,
-    upThreshold: 160,
+    upThreshold: 155,
     jointGroup: JointGroup.legs,
   );
 

@@ -1,7 +1,13 @@
-import 'package:flutter/painting.dart';
 import 'pose_landmark.dart';
 
 enum JointGroup { arms, legs }
+
+/// 한쪽(좌 또는 우)의 관절 3점 세트
+typedef JointSet = ({
+  PoseLandmarkData? s,
+  PoseLandmarkData? e,
+  PoseLandmarkData? w,
+});
 
 class ExerciseConfig {
   final String id;
@@ -19,32 +25,32 @@ class ExerciseConfig {
   });
 
   // 설정에 맞는 좌우 관절 추출
-  ({Offset? s, Offset? e, Offset? w})? leftJoints(PoseLandmarks p) {
+  JointSet leftJoints(PoseLandmarks p) {
     return switch (jointGroup) {
       JointGroup.arms => (
-          s: p.leftShoulder?.position,
-          e: p.leftElbow?.position,
-          w: p.leftWrist?.position,
+          s: p.leftShoulder,
+          e: p.leftElbow,
+          w: p.leftWrist,
         ),
       JointGroup.legs => (
-          s: p.leftHip?.position,
-          e: p.leftKnee?.position,
-          w: p.leftAnkle?.position,
+          s: p.leftHip,
+          e: p.leftKnee,
+          w: p.leftAnkle,
         ),
     };
   }
 
-  ({Offset? s, Offset? e, Offset? w})? rightJoints(PoseLandmarks p) {
+  JointSet rightJoints(PoseLandmarks p) {
     return switch (jointGroup) {
       JointGroup.arms => (
-          s: p.rightShoulder?.position,
-          e: p.rightElbow?.position,
-          w: p.rightWrist?.position,
+          s: p.rightShoulder,
+          e: p.rightElbow,
+          w: p.rightWrist,
         ),
       JointGroup.legs => (
-          s: p.rightHip?.position,
-          e: p.rightKnee?.position,
-          w: p.rightAnkle?.position,
+          s: p.rightHip,
+          e: p.rightKnee,
+          w: p.rightAnkle,
         ),
     };
   }
