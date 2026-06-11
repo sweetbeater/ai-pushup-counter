@@ -4,8 +4,12 @@ import 'package:flutter/widgets.dart';
 import '../models/pose_landmark.dart';
 
 class PoseService {
+  // accurate: BlazePose 고정밀 모델 (MoveNet Thunder급) — 관절 좌표 품질 우선
   final PoseDetector _detector = PoseDetector(
-    options: PoseDetectorOptions(mode: PoseDetectionMode.stream),
+    options: PoseDetectorOptions(
+      model: PoseDetectionModel.accurate,
+      mode: PoseDetectionMode.stream,
+    ),
   );
 
   Future<PoseLandmarks?> processImage(
@@ -50,6 +54,7 @@ class PoseService {
       if (lm == null) return null;
       return PoseLandmarkData(
         position: Offset(lm.x, lm.y),
+        z: lm.z,
         visibility: lm.likelihood,
       );
     }

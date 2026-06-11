@@ -14,6 +14,9 @@ class CameraService {
       _camera?.lensDirection == CameraLensDirection.front;
 
   Future<void> initialize() async {
+    // 이전 세션의 컨트롤러가 남아 있으면 해제 후 새로 생성 (재진입 대응)
+    await dispose();
+
     final cameras = await availableCameras();
     if (cameras.isEmpty) return;
 

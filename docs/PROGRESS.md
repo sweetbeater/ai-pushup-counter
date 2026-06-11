@@ -4,13 +4,53 @@
 
 ---
 
+## 2026-06-11 (2차) — 재진입 추적 버그 수정 · 포즈 추정 고도화 · 액체 유리 디자인 · 아이콘/런치 교체
+
+### 검증 상태
+- `flutter analyze`: 0건 / 테스트 7개 전부 통과
+- 디자인 v2 빌드: ✅ 성공 — buildId `6a2a0f916b6a810c816fcffa`, ipa 26MB
+- **이번 작업분은 아직 커밋/빌드 전**
+
+### 1. 치명 버그 수정: 두 번째 운동부터 추적 안 됨
+- 원인: `cameraInitProvider`가 영구 캐시라 재진입 시 이전 `CameraController` 재사용
+  → iOS에서 같은 컨트롤러로 `stopImageStream` 후 `startImageStream` 재호출 시 프레임 미수신
+- 수정: `FutureProvider.autoDispose`로 전환 — 화면 진입마다 컨트롤러 새로 생성, 이탈 시 완전 해제
+- `CameraService.initialize()`에 기존 컨트롤러 해제 가드 추가, 재진입 시 잔여 랜드마크 제거
+
+### 2. 포즈 추정 고도화
+- ML Kit **accurate 모델** 전환 (BlazePose 고정밀, MoveNet Thunder급)
+- **3D 관절 각도**: 랜드마크 z축 포함 — 몸이 카메라와 기울어져도 각도 안정
+- 스무딩을 5프레임 이동평균 → **One Euro Filter**로 교체 (빠른 페이스 지연 제거)
+- **카메라 가이드 오버레이** (`pose_guide_overlay.dart`): 시작 전 코너 브래킷 프레임 +
+  전신 인식 상태 실시간 피드백 ("전신 인식 완료" / "전신이 보이게 기기를 두세요")
+- FSM·visibility 게이팅·2프레임 확인은 기존 구현 유지 (중복 추가 안 함)
+
+### 3. 액체 유리(Liquid Glass) 디자인
+- `LiquidGlass` 공용 위젯: BackdropFilter 블러 + 좌상단 광원 그라데이션 엣지 + 유리 투과광 그라데이션
+- `AmbientBackground`: 배경 컬러 블롭(오렌지/블루) — 유리 뒤에서 굴절될 빛
+- 적용: 홈(히어로 카드, 스탯 타일) / 결과(정보 카드) / 기록(요약 카드, 레코드 카드)
+- `AppTheme.cardDecoration` 제거 (전부 LiquidGlass로 대체)
+
+### 4. 앱 아이콘 + 런치 이미지
+- 진행 링 모티프 아이콘 생성 (`tool/generate_icon.ps1`, GDI+): 다크 그라데이션 배경 +
+  시그널 오렌지 270° 아크 + 글로우
+- `flutter_launcher_icons`로 iOS 아이콘 세트 생성 (`assets/icon/app_icon.png` 원본)
+- LaunchScreen.storyboard 배경 `#0A0B0D` + LaunchImage 1x/2x/3x 링 글리프로 교체
+
+### 다음 할 일
+- [ ] 커밋 + ios-adhoc 빌드 ("빌드해")
+- [ ] 실기기 검증: 재진입 추적, accurate 모델 프레임레이트, 가이드 오버레이
+- [ ] 액체 유리 질감 실기기 확인 (블러 강도/블롭 밝기 조정 여지)
+
+---
+
 ## 2026-06-11 — 인식률 개선 · 버그 수정 · 디자인 v2 · 코치형 TTS · 기능 추가
 
 ### 검증 상태
 - `flutter analyze`: 0건
 - 테스트: 7개 전부 통과 (카운터 단위 테스트 6 + 홈 스모크 1)
 - 1차 빌드 (디자인 v1 시점): ✅ 성공 — Codemagic ios-adhoc, buildId `6a2a099d2b2e884b38bd6074`, `ai_pushup_counter.ipa` 25.9MB
-- **디자인 v2는 아직 커밋/빌드 전** — 다음 빌드에 포함 필요
+- 2차 빌드 (디자인 v2): ✅ 성공 — buildId `6a2a0f916b6a810c816fcffa`, 26MB
 
 ### 1. 인식률 개선 (목표 95%+)
 - **각도 왜곡 제거 (핵심)**: 랜드마크를 화면 비율로 비균등 스케일링한 뒤 각도를 계산하던 문제 수정 → 원본 이미지 좌표로 각도 계산 (`pose_service.dart`)

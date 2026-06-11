@@ -63,7 +63,7 @@ class ExerciseCounterService {
         .reduce((a, b) => a < b ? a : b);
     if (minVisibility < AppConstants.visibilityThreshold) return null;
 
-    return calculateAngle(s.position, e.position, w.position);
+    return calculateAngle(s, e, w);
   }
 
   void _updateState(double angle) {

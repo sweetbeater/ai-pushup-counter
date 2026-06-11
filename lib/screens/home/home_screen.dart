@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/exercise_record.dart';
 import '../../providers/workout_provider.dart';
 import '../../widgets/fade_slide_in.dart';
+import '../../widgets/liquid_glass.dart';
 import '../workout/workout_screen.dart';
 import '../history/history_screen.dart';
 
@@ -47,117 +48,122 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              FadeSlideIn(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(dateStr.toUpperCase(),
-                              style: AppTheme.overline),
-                          const SizedBox(height: 8),
-                          const Text('오늘도\n한 번 더.', style: AppTheme.h1),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const HistoryScreen()),
-                      ),
-                      icon: const Icon(
-                        Icons.bar_chart_rounded,
-                        color: AppColors.textSecondary,
-                      ),
-                      style: IconButton.styleFrom(
-                        backgroundColor: AppColors.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: const BorderSide(color: AppColors.hairline),
+      body: AmbientBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
+                FadeSlideIn(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              dateStr.toUpperCase(),
+                              style: AppTheme.overline,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text('오늘도\n한 번 더.', style: AppTheme.h1),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.section),
-              FutureBuilder<List<ExerciseRecord>>(
-                future: _recordsFuture,
-                builder: (context, snapshot) {
-                  final records = snapshot.data ?? [];
-                  return Column(
-                    children: [
-                      FadeSlideIn(
-                        delayMs: 60,
-                        child: _WeeklyHeroCard(records: records),
-                      ),
-                      const SizedBox(height: 12),
-                      FadeSlideIn(
-                        delayMs: 120,
-                        child: _StatTileRow(records: records),
+                      IconButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HistoryScreen(),
+                          ),
+                        ),
+                        icon: const Icon(
+                          Icons.bar_chart_rounded,
+                          color: AppColors.textSecondary,
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: const BorderSide(color: AppColors.hairline),
+                          ),
+                        ),
                       ),
                     ],
-                  );
-                },
-              ),
-              const Spacer(),
-              FadeSlideIn(
-                delayMs: 180,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('목표', style: AppTheme.overline),
-                    const SizedBox(height: 12),
-                    Row(
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.section),
+                FutureBuilder<List<ExerciseRecord>>(
+                  future: _recordsFuture,
+                  builder: (context, snapshot) {
+                    final records = snapshot.data ?? [];
+                    return Column(
                       children: [
-                        for (final goal in _goalOptions) ...[
-                          _GoalChip(
-                            label: '$goal',
-                            selected: workout.goalCount == goal,
-                            onTap: () => ref
-                                .read(workoutProvider.notifier)
-                                .setGoal(goal),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        _GoalChip(
-                          label: '무제한',
-                          selected: workout.goalCount == null,
-                          onTap: () =>
-                              ref.read(workoutProvider.notifier).setGoal(null),
+                        FadeSlideIn(
+                          delayMs: 60,
+                          child: _WeeklyHeroCard(records: records),
+                        ),
+                        const SizedBox(height: 12),
+                        FadeSlideIn(
+                          delayMs: 120,
+                          child: _StatTileRow(records: records),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 20),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: AppTheme.accentGlow,
+                    );
+                  },
+                ),
+                const Spacer(),
+                FadeSlideIn(
+                  delayMs: 180,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('목표', style: AppTheme.overline),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          for (final goal in _goalOptions) ...[
+                            _GoalChip(
+                              label: '$goal',
+                              selected: workout.goalCount == goal,
+                              onTap: () => ref
+                                  .read(workoutProvider.notifier)
+                                  .setGoal(goal),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          _GoalChip(
+                            label: '무제한',
+                            selected: workout.goalCount == null,
+                            onTap: () => ref
+                                .read(workoutProvider.notifier)
+                                .setGoal(null),
+                          ),
+                        ],
                       ),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _openWorkout,
-                          child: const Text('운동 시작'),
+                      const SizedBox(height: 20),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: AppTheme.accentGlow,
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _openWorkout,
+                            child: const Text('운동 시작'),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
@@ -174,8 +180,11 @@ class _WeeklyHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final weekStart = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
+    final weekStart = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
 
     final dailyCounts = List<int>.filled(7, 0);
     for (final r in records) {
@@ -186,9 +195,7 @@ class _WeeklyHeroCard extends StatelessWidget {
     }
     final weekTotal = dailyCounts.fold(0, (a, b) => a + b);
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.cardDecoration,
+    return LiquidGlass(
       child: Row(
         children: [
           Expanded(
@@ -250,16 +257,11 @@ class _WeekBarsPainter extends CustomPainter {
         ..color = i == todayIndex
             ? AppColors.accent
             : counts[i] == 0
-                ? AppColors.surfaceRaised
-                : AppColors.textTertiary;
+            ? AppColors.surfaceRaised
+            : AppColors.textTertiary;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            i * (barWidth + gap),
-            size.height - h,
-            barWidth,
-            h,
-          ),
+          Rect.fromLTWH(i * (barWidth + gap), size.height - h, barWidth, h),
           const Radius.circular(4),
         ),
         paint,
@@ -284,7 +286,9 @@ class _StatTileRow extends StatelessWidget {
 
     return Row(
       children: [
-        Expanded(child: _StatTile(label: '누적', value: '$totalReps')),
+        Expanded(
+          child: _StatTile(label: '누적', value: '$totalReps'),
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: _StatTile(label: '최고 기록', value: '$best', accent: true),
@@ -307,9 +311,7 @@ class _StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.cardDecoration,
+    return LiquidGlass(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

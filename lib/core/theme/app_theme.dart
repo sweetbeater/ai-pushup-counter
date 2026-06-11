@@ -142,11 +142,7 @@ class AppTheme {
   );
 
   // ── 형태 & 깊이 ─────────────────────────────────────
-  static final cardDecoration = BoxDecoration(
-    color: AppColors.surface,
-    borderRadius: BorderRadius.circular(24),
-    border: Border.all(color: AppColors.hairline),
-  );
+  // 카드 표면은 LiquidGlass 위젯이 담당한다 (widgets/liquid_glass.dart)
 
   /// 악센트 버튼 글로우 — "조명" 컨셉의 깊이감
   static final accentGlow = [

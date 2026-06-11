@@ -8,6 +8,7 @@ import '../../providers/pose_provider.dart';
 import '../../providers/workout_provider.dart';
 import '../../widgets/camera_preview_widget.dart';
 import '../../widgets/count_display.dart';
+import '../../widgets/pose_guide_overlay.dart';
 import '../../widgets/workout_status_widget.dart';
 import '../result/result_screen.dart';
 
@@ -58,6 +59,8 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   }
 
   Future<void> _initCamera() async {
+    // 이전 세션의 잔여 랜드마크 제거
+    ref.read(poseLandmarksProvider.notifier).state = null;
     await ref.read(cameraInitProvider.future);
     final cameraService = ref.read(cameraServiceProvider);
     final poseService = ref.read(poseServiceProvider);
@@ -133,6 +136,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
               ),
             ),
           ),
+          // 시작 전 카메라 가이드 (전신 인식 피드백)
+          if (workout.status == WorkoutStatus.idle)
+            PoseGuideOverlay(landmarks: landmarks),
           SafeArea(
             child: Column(
               children: [

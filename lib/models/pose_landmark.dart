@@ -3,9 +3,16 @@ import 'package:flutter/painting.dart';
 class PoseLandmarkData {
   /// 원본 이미지 좌표계 기준 위치 (각도 계산이 왜곡되지 않도록 균등 좌표계 유지)
   final Offset position;
+
+  /// 깊이(z). 카메라와 몸이 기울어진 상황에서도 3D 각도가 안정적이도록 사용
+  final double z;
   final double visibility;
 
-  const PoseLandmarkData({required this.position, required this.visibility});
+  const PoseLandmarkData({
+    required this.position,
+    this.z = 0,
+    required this.visibility,
+  });
 }
 
 class PoseLandmarks {

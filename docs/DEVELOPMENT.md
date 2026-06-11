@@ -61,7 +61,7 @@ lib/
 │   │   └── app_theme.dart          # 디자인 시스템 (색상, 테마, 숫자 스타일)
 │   └── utils/
 │       ├── angle_calculator.dart   # 관절 각도 계산 (0~180°)
-│       └── pose_smoothing.dart     # 5프레임 이동평균 스무딩
+│       └── pose_smoothing.dart     # One Euro Filter 스무딩
 ├── models/
 │   ├── exercise_config.dart        # ★ 운동 설정 모델
 │   ├── exercise_record.dart        # 운동 기록 모델
@@ -121,14 +121,14 @@ static const squat = ExerciseConfig(
 ```
 카메라 프레임
     ↓
-ML Kit 포즈 감지 (원본 이미지 좌표 그대로 사용 — 화면 스케일링에 의한 각도 왜곡 없음)
+ML Kit 포즈 감지 (accurate 모델, 원본 이미지 좌표 그대로 사용 — 화면 스케일링에 의한 각도 왜곡 없음)
     ↓
 좌우 각각 visibility 검사 → 신뢰도 충분한 쪽만 사용
   (양쪽 OK → 평균, 한쪽만 OK → 그쪽만, 둘 다 NG → 유실 프레임)
     ↓
-각도 계산: calculateAngle(shoulder, elbow, wrist)
+각도 계산: calculateAngle(shoulder, elbow, wrist) — z축 포함 3D 각도 (기울어진 자세 대응)
     ↓
-5프레임 이동평균 스무딩
+One Euro Filter 스무딩 (정지 시 떨림 억제 + 빠른 동작 즉시 추종)
     ↓
 상태 머신 (전환에 2연속 프레임 확인 필요 — 노이즈 스파이크 방지)
   ready/up → angle ≤ downThreshold → down 상태

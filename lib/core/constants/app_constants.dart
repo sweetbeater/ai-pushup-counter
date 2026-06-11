@@ -1,6 +1,5 @@
 class AppConstants {
   static const int countdownSeconds = 3;
-  static const int smoothingFrames = 5;
   static const double downAngleThreshold = 100.0;
   static const double upAngleThreshold = 155.0;
   static const double visibilityThreshold = 0.5;
