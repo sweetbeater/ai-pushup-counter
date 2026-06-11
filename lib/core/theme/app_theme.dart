@@ -1,22 +1,32 @@
 import 'package:flutter/material.dart';
 
-/// 미니멀 다크 + 단일 악센트 디자인 시스템.
-/// 프리미엄 피트니스 톤: 거의 검정 배경, 오프화이트 텍스트, 볼트 라임 포인트.
+/// 디자인 시스템 v2 "FORGE"
+/// 컨셉: 어두운 체육관, 한 줄기 조명 — 깊은 다크 베이스 + 시그널 오렌지 단일 악센트.
+/// 악센트는 화면당 1곳(핵심 숫자 1개 + 버튼 1개)에만 사용한다.
 class AppColors {
-  static const background = Color(0xFF0B0C0E);
-  static const surface = Color(0xFF16181C);
-  static const surfaceLight = Color(0xFF1F2228);
-  static const border = Color(0xFF2A2D34);
+  // 레이어
+  static const background = Color(0xFF0A0B0D);
+  static const surface = Color(0xFF13151A);
+  static const surfaceRaised = Color(0xFF1A1D24);
+  static const hairline = Color(0x14FFFFFF); // white 8%
 
-  static const accent = Color(0xFFD2FF52);
-  static const onAccent = Color(0xFF101205);
+  // 악센트: 시그널 오렌지
+  static const accent = Color(0xFFFF5C38);
+  static const onAccent = Color(0xFFFFFFFF);
 
-  static const textPrimary = Color(0xFFF4F5F7);
-  static const textSecondary = Color(0xFF9AA0AB);
-  static const textTertiary = Color(0xFF5C6270);
+  // 텍스트
+  static const textPrimary = Color(0xFFF5F6F8);
+  static const textSecondary = Color(0xFF9BA1AC);
+  static const textTertiary = Color(0xFF5E6470);
 
   static const danger = Color(0xFFFF5A5A);
-  static const success = Color(0xFF5ADB8C);
+  static const success = Color(0xFF3EE08F);
+}
+
+/// 4pt 그리드 스페이싱
+class AppSpacing {
+  static const double screenH = 24; // 화면 좌우 여백
+  static const double section = 32; // 섹션 간격
 }
 
 class AppTheme {
@@ -48,7 +58,7 @@ class AppTheme {
             elevation: 0,
             minimumSize: const Size.fromHeight(56),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
             ),
             textStyle: const TextStyle(
               fontSize: 17,
@@ -57,16 +67,93 @@ class AppTheme {
             ),
           ),
         ),
-        dividerColor: AppColors.border,
+        dividerColor: AppColors.hairline,
         useMaterial3: true,
       );
 
-  /// 큰 숫자 표시용 (카운트, 통계)
-  static const numberStyle = TextStyle(
+  // ── 타이포그래피 스케일 ──────────────────────────────
+  static const _tabular = [FontFeature.tabularFigures()];
+
+  /// 운동 중 카운트
+  static const display = TextStyle(
     color: AppColors.textPrimary,
-    fontWeight: FontWeight.w700,
+    fontSize: 104,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -3,
+    height: 1.0,
+    fontFeatures: _tabular,
+  );
+
+  /// 결과 횟수
+  static const hero = TextStyle(
+    color: AppColors.textPrimary,
+    fontSize: 64,
+    fontWeight: FontWeight.w800,
     letterSpacing: -2,
     height: 1.0,
-    fontFeatures: [FontFeature.tabularFigures()],
+    fontFeatures: _tabular,
   );
+
+  /// 홈 인사말
+  static const h1 = TextStyle(
+    color: AppColors.textPrimary,
+    fontSize: 32,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -1.5,
+    height: 1.15,
+  );
+
+  static const h2 = TextStyle(
+    color: AppColors.textPrimary,
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.5,
+  );
+
+  /// 통계 숫자
+  static const stat = TextStyle(
+    color: AppColors.textPrimary,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -1,
+    height: 1.0,
+    fontFeatures: _tabular,
+  );
+
+  static const body = TextStyle(
+    color: AppColors.textSecondary,
+    fontSize: 15,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
+  );
+
+  static const caption = TextStyle(
+    color: AppColors.textSecondary,
+    fontSize: 13,
+    fontWeight: FontWeight.w500,
+  );
+
+  /// 라벨 (REPS, 누적 등)
+  static const overline = TextStyle(
+    color: AppColors.textTertiary,
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 1.2,
+  );
+
+  // ── 형태 & 깊이 ─────────────────────────────────────
+  static final cardDecoration = BoxDecoration(
+    color: AppColors.surface,
+    borderRadius: BorderRadius.circular(24),
+    border: Border.all(color: AppColors.hairline),
+  );
+
+  /// 악센트 버튼 글로우 — "조명" 컨셉의 깊이감
+  static final accentGlow = [
+    BoxShadow(
+      color: AppColors.accent.withValues(alpha: 0.25),
+      blurRadius: 24,
+      offset: const Offset(0, 8),
+    ),
+  ];
 }

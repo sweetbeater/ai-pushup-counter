@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/camera_provider.dart';
@@ -26,6 +27,13 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initCamera();
       ref.listenManual(workoutProvider, (previous, next) {
+        // 카운트마다 미디엄 햅틱 — 보지 않아도 몸으로 느끼는 피드백
+        if (next.status == WorkoutStatus.exercising &&
+            previous != null &&
+            next.count > previous.count) {
+          HapticFeedback.mediumImpact();
+        }
+
         if (previous?.status != WorkoutStatus.finished &&
             next.status == WorkoutStatus.finished &&
             mounted) {
@@ -38,6 +46,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                 date: DateTime.now(),
                 exerciseName: next.exercise.name,
                 isNewRecord: next.isNewRecord,
+                goalCount: next.goalCount,
               ),
             ),
           );
@@ -108,10 +117,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                     landmarks: landmarks,
                   )
                 : const Center(
-                    child: Text(
-                      '카메라를 사용할 수 없습니다',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
+                    child: Text('카메라를 사용할 수 없습니다', style: AppTheme.body),
                   ),
             loading: () => const Center(
               child: CircularProgressIndicator(color: AppColors.accent),
@@ -121,7 +127,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                 padding: const EdgeInsets.all(32),
                 child: Text(
                   '카메라 오류: $e',
-                  style: const TextStyle(color: AppColors.textSecondary),
+                  style: AppTheme.body,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -130,15 +136,15 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
           SafeArea(
             child: Column(
               children: [
-                // 상단 바: 뒤로가기 + 상태 + 경과 시간
+                // 상단 바: 닫기 + 상태 필 + 경과 시간
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(8, 8, 20, 0),
                   child: Row(
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(
-                          Icons.close,
+                          Icons.close_rounded,
                           color: AppColors.textPrimary,
                         ),
                       ),
@@ -149,59 +155,79 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                       ),
                       const Spacer(),
                       SizedBox(
-                        width: 56,
+                        width: 52,
                         child: Text(
                           workout.status == WorkoutStatus.exercising
                               ? _formatTime(workout.durationSeconds)
                               : '',
                           textAlign: TextAlign.right,
-                          style: AppTheme.numberStyle.copyWith(
-                            fontSize: 16,
-                            letterSpacing: 0,
-                            color: AppColors.textSecondary,
+                          style: AppTheme.caption.copyWith(
+                            fontFeatures: const [
+                              FontFeature.tabularFigures()
+                            ],
+                            fontSize: 15,
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
                 if (workout.status == WorkoutStatus.exercising)
                   CountDisplay(count: workout.count, goal: workout.goalCount),
                 if (workout.status == WorkoutStatus.countdown)
                   Expanded(
                     child: Center(
-                      child: Text(
-                        '${workout.countdownValue}',
-                        style: AppTheme.numberStyle.copyWith(
-                          fontSize: 160,
-                          color: AppColors.accent,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 350),
+                        switchInCurve: Curves.easeOutBack,
+                        transitionBuilder: (child, animation) =>
+                            ScaleTransition(
+                          scale: Tween(begin: 1.4, end: 1.0)
+                              .animate(animation),
+                          child:
+                              FadeTransition(opacity: animation, child: child),
+                        ),
+                        child: Text(
+                          '${workout.countdownValue}',
+                          key: ValueKey(workout.countdownValue),
+                          style: AppTheme.display.copyWith(
+                            fontSize: 150,
+                            color: AppColors.accent,
+                          ),
                         ),
                       ),
                     ),
                   )
                 else
                   const Spacer(),
-                // 하단 버튼
+                // 하단 컨트롤
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                   child: switch (workout.status) {
                     WorkoutStatus.idle => Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             '카메라에 몸 전체가 나오도록 측면에 두세요',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 13,
-                            ),
+                            style: AppTheme.caption
+                                .copyWith(color: AppColors.textSecondary),
                           ),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: () => ref
-                                .read(workoutProvider.notifier)
-                                .startWorkout(),
-                            child: const Text('시작'),
+                          const SizedBox(height: 14),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: AppTheme.accentGlow,
+                            ),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () => ref
+                                    .read(workoutProvider.notifier)
+                                    .startWorkout(),
+                                child: const Text('시작'),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -210,11 +236,11 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                       OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(56),
-                          side: const BorderSide(color: AppColors.border),
+                          side: const BorderSide(color: AppColors.hairline),
                           backgroundColor:
                               AppColors.surface.withValues(alpha: 0.7),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(18),
                           ),
                         ),
                         onPressed: () =>

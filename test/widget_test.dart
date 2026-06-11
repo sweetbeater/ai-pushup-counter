@@ -11,8 +11,8 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: MyApp()));
     await tester.pumpAndSettle();
 
-    expect(find.text('PUSH UP'), findsOneWidget);
+    expect(find.text('오늘도\n한 번 더.'), findsOneWidget);
     expect(find.text('운동 시작'), findsOneWidget);
-    expect(find.text('목표 횟수'), findsOneWidget);
+    expect(find.text('목표'), findsOneWidget);
   });
 }

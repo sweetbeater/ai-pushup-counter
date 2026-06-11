@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/fade_slide_in.dart';
+import '../../widgets/progress_ring.dart';
 
 class ResultScreen extends StatelessWidget {
   final int count;
@@ -7,6 +9,7 @@ class ResultScreen extends StatelessWidget {
   final DateTime date;
   final String exerciseName;
   final bool isNewRecord;
+  final int? goalCount;
 
   const ResultScreen({
     super.key,
@@ -15,6 +18,7 @@ class ResultScreen extends StatelessWidget {
     required this.date,
     this.exerciseName = '팔굽혀펴기',
     this.isNewRecord = false,
+    this.goalCount,
   });
 
   String _formatDuration(int seconds) {
@@ -27,89 +31,121 @@ class ResultScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateStr =
         '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+    // 목표가 있으면 달성률, 없으면 링 가득
+    final progress =
+        goalCount != null && goalCount! > 0 ? count / goalCount! : 1.0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding:
+              const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 48),
-              Text(
-                '$exerciseName 완료',
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(height: 40),
+              FadeSlideIn(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('$exerciseName 완료'.toUpperCase(),
+                        style: AppTheme.overline
+                            .copyWith(color: AppColors.textSecondary)),
+                    if (isNewRecord)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: const Text(
+                          '🏆 신기록',
+                          style: TextStyle(
+                            color: AppColors.accent,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              if (isNewRecord)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: const Text(
-                    '🏆 신기록',
-                    style: TextStyle(
-                      color: AppColors.accent,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+              Expanded(
+                child: Center(
+                  child: FadeSlideIn(
+                    delayMs: 80,
+                    child: ProgressRing(
+                      progress: progress,
+                      size: 280,
+                      strokeWidth: 10,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 0부터 차오르는 count-up — 성취의 한 장면
+                          TweenAnimationBuilder<int>(
+                            tween: IntTween(begin: 0, end: count),
+                            duration: const Duration(milliseconds: 800),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, value, _) => Text(
+                              '$value',
+                              style: AppTheme.hero.copyWith(
+                                fontSize: 88,
+                                color: isNewRecord
+                                    ? AppColors.accent
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'REPS',
+                            style: AppTheme.overline
+                                .copyWith(color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+              ),
+              FadeSlideIn(
+                delayMs: 160,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: AppTheme.cardDecoration,
+                  child: Row(
                     children: [
-                      Text(
-                        '$count',
-                        style: AppTheme.numberStyle.copyWith(
-                          fontSize: 140,
-                          color: isNewRecord
-                              ? AppColors.accent
-                              : AppColors.textPrimary,
+                      Expanded(
+                        child: _InfoItem(
+                          label: '운동 시간',
+                          value: _formatDuration(durationSeconds),
                         ),
                       ),
-                      const Text(
-                        'REPS',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 4,
-                        ),
+                      Container(
+                        width: 1,
+                        height: 36,
+                        color: AppColors.hairline,
+                      ),
+                      Expanded(
+                        child: _InfoItem(label: '날짜', value: dateStr),
                       ),
                     ],
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border),
+              const SizedBox(height: 14),
+              FadeSlideIn(
+                delayMs: 220,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context)
+                        .popUntil((route) => route.isFirst),
+                    child: const Text('홈으로'),
+                  ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _InfoItem(label: '운동 시간', value: _formatDuration(durationSeconds)),
-                    _InfoItem(label: '날짜', value: dateStr),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () =>
-                    Navigator.of(context).popUntil((route) => route.isFirst),
-                child: const Text('홈으로'),
               ),
               const SizedBox(height: 24),
             ],
@@ -136,16 +172,11 @@ class _InfoItem extends StatelessWidget {
             color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 13,
-          ),
-        ),
+        const SizedBox(height: 6),
+        Text(label, style: AppTheme.overline),
       ],
     );
   }
